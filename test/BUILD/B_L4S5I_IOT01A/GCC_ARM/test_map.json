@@ -1,0 +1,98 @@
+[
+    {
+        "module": "../..",
+        "size": {
+            ".text": 29548,
+            ".data": 444,
+            ".bss": 7970,
+            ".text-delta": 468,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "BUILD/B_L4S5I_IOT01A",
+        "size": {
+            ".text": 1696,
+            ".data": 0,
+            ".bss": 749,
+            ".text-delta": 80,
+            ".data-delta": 0,
+            ".bss-delta": 52
+        }
+    },
+    {
+        "module": "[fill]",
+        "size": {
+            ".text": 160,
+            ".data": 9,
+            ".bss": 38,
+            ".text-delta": 52,
+            ".data-delta": 0,
+            ".bss-delta": 4
+        }
+    },
+    {
+        "module": "[lib]/c.a",
+        "size": {
+            ".text": 74500,
+            ".data": 2574,
+            ".bss": 127,
+            ".text-delta": 40,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "[lib]/gcc.a",
+        "size": {
+            ".text": 7736,
+            ".data": 0,
+            ".bss": 0,
+            ".text-delta": 540,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "[lib]/misc",
+        "size": {
+            ".text": 180,
+            ".data": 4,
+            ".bss": 28,
+            ".text-delta": 0,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "[lib]/nosys.a",
+        "size": {
+            ".text": 32,
+            ".data": 0,
+            ".bss": 0,
+            ".text-delta": 0,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "module": "[lib]/stdc++.a",
+        "size": {
+            ".text": 175916,
+            ".data": 145,
+            ".bss": 5720,
+            ".text-delta": 0,
+            ".data-delta": 0,
+            ".bss-delta": 0
+        }
+    },
+    {
+        "summary": {
+            "static_ram": 17808,
+            "static_ram_delta": 56,
+            "total_flash": 292944,
+            "total_flash_delta": 1180
+        }
+    }
+]
