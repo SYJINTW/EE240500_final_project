@@ -43,7 +43,6 @@ def uart_detect(s):
     global line_det_active
     global april_det_active
     if(s == b'color'):
-        print("color det active\n")
         color_det_active = True
         line_det_active = False
         april_det_active = False
@@ -67,15 +66,12 @@ def uart_detect(s):
 
 def color_detection():
     global color_trigger
-    #img.draw_rectangle(70, 50, 20, 20, color = (0, 0, 0), thickness = 1, fill = False)
     green_blobs = img.find_blobs([green], roi = (70, 50, 20, 20))
     if(green_blobs):
         print("find green")
         color_trigger = color_trigger + 1
-
     else:
         color_trigger = 0
-        #print("reset")
 
 
 def line_detection():
@@ -85,7 +81,6 @@ def line_detection():
         img.draw_line(l.line(), color = (255, 255, 0))
         print_args = (l.x1(), l.y1(), l.x2(), l.y2())
         uart.write(("/line_det/run %f %f %f %f\n" % print_args).encode())
-        #print(("/line_det/run %f %f %f %f\n" % print_args).encode())
 
 
 def tag():
@@ -96,15 +91,14 @@ def tag():
         print_args = (tag.x_translation(), tag.y_translation(), tag.z_translation(), degrees(tag.x_rotation()), degrees(tag.y_rotation()), degrees(tag.z_rotation()))
         # Translation units are unknown. Rotation units are in degrees.
         uart.write(("/calib/run %f %f %f %f %f %f\n" % print_args).encode())
-        #print(("/calib/run %f %f %f %f %f %f\n" % print_args).encode())
         time.sleep(8)
 
 
 while(True):
     send = uart.readline()
     uart_detect(send)
-    if(send):
-        print(send)
+    #if(send):
+    #    print(send)
     clock.tick()
     img = sensor.snapshot()
 
@@ -114,7 +108,7 @@ while(True):
     if(color_det_active):
         time.sleep_ms(1000)
         color_detection()
-        if(color_trigger > 5):
+        if(color_trigger > 3):
             uart_detect(b'stop')
             color_trigger = 0
     elif (line_det_active):
@@ -125,5 +119,4 @@ while(True):
             trigger = 0
     elif (april_det_active):
         tag()
-
 

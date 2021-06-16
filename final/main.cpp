@@ -2,13 +2,16 @@
 #include "bbcar.h"
 #include "mbed_rpc.h"
 
-#define minThreshold 174
-#define maxThreshold 186
-#define HALF_CIRCLE_TIME 8s
-
 
 // global variable and flag
 
+#define MVheight 120
+#define MVwidth 160
+#define lineDetTolerance 5
+#define middleAngle 180
+#define minThreshold 90
+#define maxThreshold 172
+#define HALF_CIRCLE_TIME 8s
 int step = 0;
 
 
@@ -22,6 +25,8 @@ BufferedSerial uart(D1,D0); //tx,rx
 BufferedSerial xbee(A1,A0); //tx,rx
 BBCar car(pin5, pin6, servo_ticker);
 DigitalInOut ping(D10);
+
+Thread thread;
 
 
 // car table
@@ -50,9 +55,6 @@ RPCFunction Driver(&driver, "driver");
 void line_det(Arguments *in, Reply *out);
 RPCFunction Line_det(&line_det, "line_det");
 
-//void circle(Arguments *in, Reply *out);
-//RPCFunction Circle(&circle, "circle");
-
 void parking(Arguments *in, Reply *out);
 RPCFunction Parking(&parking, "parking");
 
@@ -62,7 +64,8 @@ RPCFunction Calib(&calib, "calib");
 void stop(Arguments *in, Reply *out);
 RPCFunction Stop(&stop, "stop");
 
-Thread thread;
+
+
 
 
 int main() 
@@ -98,7 +101,8 @@ int main()
     }
 }
 
-void xbee_RPC(void) {
+void xbee_RPC(void) 
+{
     char buf[256], outbuf[256];
     FILE *devin = fdopen(&xbee, "r");
     FILE *devout = fdopen(&xbee, "w");
@@ -122,7 +126,7 @@ void xbee_RPC(void) {
 void xbee_start(Arguments *in, Reply *out) 
 {
     char buf_xbee[8] = "\ndriver";
-    xbee.write(buf_xbee, 7); // sent xbee to driver
+    xbee.write(buf_xbee, 7); // sent driver to xbee
 }
 
 void driver(Arguments *in, Reply *out)
@@ -148,18 +152,12 @@ void driver(Arguments *in, Reply *out)
         ThisThread::sleep_for(500ms);
         pingStraight();
         ThisThread::sleep_for(500ms);
-        ninetyDegree(-1);
-        ThisThread::sleep_for(500ms);
         halfCircle(1);
         
         // call next driver
         char buf_xbee[8] = "\ndriver";
         xbee.write(buf_xbee, 7);
         step++;
-
-        //char buf_xbee[8] = "\ncircle";
-        //xbee.write(buf_xbee, 7);
-        //step++;
     }
     else if(step == 3)
     {
@@ -167,43 +165,47 @@ void driver(Arguments *in, Reply *out)
         xbee.write(buf_xbee, 8);
         step++;
     }
-    else
+    else if(step > 3 && step < 7) // only apriltag correction three times
     {
         char buf_uart[6] = "calib"; 
         uart.write(buf_uart, 5);
         step++;
     }
+    else;
 }
 
-int first = 0;
 
 void line_det(Arguments *in, Reply *out) 
 {
-
     static int num = 0;
-
     double x1 = in->getArg<double>();
     double y1 = in->getArg<double>();
     double x2 = in->getArg<double>();
     double y2 = in->getArg<double>();
 
 
-    if (first == 0) {
+    if (num == 0) 
+    {
         car.goStraight(100);
         ThisThread::sleep_for(1s);
         car.stop();
-        first++;
+        num++;
         return;
     }
-    if (x2 > 85) {          // turn left
+    if (x2 > MVwidth/2 - lineDetTolerance) // turn left
+    {          
         car.turn(80, 0.7);
         ThisThread::sleep_for(100ms);
         car.stop();
-    } else if (x2 < 75) {   // turn right
+    } 
+    else if (x2 < MVwidth/2 + lineDetTolerance) // turn right
+    {   
         car.turn(80, -0.7);
         ThisThread::sleep_for(100ms);
         car.stop();
-    } else {                // go straight
+    } 
+    else // go straight
+    {                
         car.goStraight(100);
         ThisThread::sleep_for(100ms);
         car.stop();
@@ -219,6 +221,7 @@ void stop(Arguments *in, Reply *out)
     xbee.write(buf_xbee, 7);
 }
 
+// -1 for left, 1 for right
 void ninetyDegree(int flag)
 {
     // 90 degree
@@ -275,7 +278,8 @@ void pingStraight()
     car.stop();
 }
 
-void parking(Arguments *in, Reply *out) {
+void parking(Arguments *in, Reply *out) 
+{
     double d1 = in->getArg<double>();
     double d2 = in->getArg<double>();
     const char *direction = in->getArg<const char *>();
@@ -293,7 +297,7 @@ void parking(Arguments *in, Reply *out) {
         car.turn(-100, -0.15);
     else if (direction[0] == 'e') 
         car.turn(-100, 0.15);
-    ThisThread::sleep_for(1300);
+    ThisThread::sleep_for(1300ms);
     car.stop();
     ThisThread::sleep_for(500ms);
 
@@ -326,7 +330,8 @@ void turning(int flag) // -1 for left, 1 for right
     car.stop();
 }
 
-void calib(Arguments *in, Reply *out) {
+void calib(Arguments *in, Reply *out) 
+{
     double Dx = in->getArg<double>();
     double Dy = in->getArg<double>();
     double Dz = in->getArg<double>();
@@ -336,7 +341,7 @@ void calib(Arguments *in, Reply *out) {
 
     double fix_ang;
     printf("Dz = %f\n", Dz);
-    if (Ry > 8 && Ry < 90)
+    if (Ry > (middleAngle - maxThreshold) && Ry < (middleAngle - minThreshold))
     {
         double D = fabs(Dz) / tan(Ry * 3.14 / 180.0f);
         if (Dx < 0)
@@ -359,25 +364,25 @@ void calib(Arguments *in, Reply *out) {
             ThisThread::sleep_for(25ms);
         car.stop();
         car.turn(100, 0.01);
-        for (int i = 0; i < 90; i++) //90 + 3 degree calibration
+        for (int i = 0; i < 90; i++) //90 degree calibration
             ThisThread::sleep_for(12ms);
         car.stop();
     }
-    else if (Ry > 270 && Ry < 352)
+    else if (Ry > (middleAngle + minThreshold) && Ry < (middleAngle + maxThreshold))
     {
         double D = fabs(Dz) / tan((360 - Ry) * 3.14 / 180.0f);
         if (Dx > 0)
         {
             fix_ang = atan(fabs(Dx) / fabs(Dz));
             car.turn(100, 0.01);
-            for (int i = 0; i < 1.4 * (90 - (360 - Ry) + fix_ang); i++) // 360 - 10 degree ca
+            for (int i = 0; i < 1.4 * (90 - (360 - Ry) + fix_ang); i++) // 360 - 10 degree calibration
                 ThisThread::sleep_for(10ms);
         }
         else
         {
             fix_ang = atan(fabs(Dx) / fabs(Dz));
             car.turn(100, 0.01);
-            for (int i = 0; i < 1.4 * (90 - (360 - Ry) - fix_ang); i++) // 360 - 10 degree ca
+            for (int i = 0; i < 1.4 * (90 - (360 - Ry) - fix_ang); i++) // 360 - 10 degree calibration
                 ThisThread::sleep_for(10ms);
         }
         car.stop();
@@ -391,7 +396,7 @@ void calib(Arguments *in, Reply *out) {
         car.stop();
     }
 
-    // calculate length
+    // calculate length by ping
     float val;
         
     ping.output();
@@ -410,10 +415,14 @@ void calib(Arguments *in, Reply *out) {
 
     ThisThread::sleep_for(10ms);
 
+    // call next driver
     char buf_xbee[8] = "\ndriver";
     xbee.write(buf_xbee, 7);
 
+    return;
+
     /*
+    // Basic apriltag correction
     double deg = in->getArg<double>();
     printf("%f\r\n", deg);
     // if degree is 180, then the car is facing directly to the Apriltag
@@ -443,6 +452,5 @@ void calib(Arguments *in, Reply *out) {
     // at right
     else if (deg < minThreshold) turning(1);
     */
-    
     
 }

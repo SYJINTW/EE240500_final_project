@@ -24,10 +24,6 @@ while send != 'done':
         # send to remote
         s.write("/line_det/run\n".encode())
 
-    elif (send == b'circle'):
-        # send to remote
-        s.write("/circle/run\n".encode())
-
     elif (send == b'parking'):
         # send to remote
         s.write("/parking/run 5 5 w\n".encode())
