@@ -3,14 +3,13 @@ import time
 import sys,tty,termios
 
 # XBee setting
-serdev = '/dev/ttyUSB2'
+serdev = '/dev/ttyUSB0'
 s = serial.Serial(serdev, 9600, timeout=3)
 
 print('Start Communication, sending RPC')
 send = 'start'
 s.write("/xbee_start/run\n".encode())
-while send!='stop':
-    #print('Sent RPC')
+while send != 'done':
     send = s.readline()
     print(send)
     if (send == b'driver'):
@@ -31,7 +30,11 @@ while send!='stop':
 
     elif (send == b'parking'):
         # send to remote
-        s.write("/parking/run 5 5 west\n".encode())
+        s.write("/parking/run 5 5 w\n".encode())
+    
+    elif (send == b'stop'):
+        # send to remote
+        s.write("/stop/run\n".encode())
 
 
 s.close()
