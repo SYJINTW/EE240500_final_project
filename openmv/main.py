@@ -119,4 +119,3 @@ while(True):
             trigger = 0
     elif (april_det_active):
         tag()
-

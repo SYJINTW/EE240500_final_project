@@ -434,7 +434,6 @@ void calib(Arguments *in, Reply *out)
         ping = 0; wait_us(200);
         ping = 1; wait_us(5);
         ping = 0; wait_us(5);
-
         ping.input();
         while(ping.read() == 0);
         t.start();
@@ -443,7 +442,6 @@ void calib(Arguments *in, Reply *out)
         printf("Ping = %lf\r\n", val*17700.4f);
         t.stop();
         t.reset();
-
         ThisThread::sleep_for(1s);
         return;
     }

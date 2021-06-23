@@ -3,7 +3,7 @@ import time
 import sys,tty,termios
 
 # XBee setting
-serdev = '/dev/ttyUSB0'
+serdev = '/dev/ttyUSB2'
 s = serial.Serial(serdev, 9600, timeout=3)
 
 print('Start Communication, sending RPC')
